@@ -1,0 +1,1 @@
+En este apartado podras ver a detalle mis proyectos, detallando el progreso de aprendizaje y demostrando mis habilidades adquiridas a lo largo de mi carrera, otorgandole algo de mí a cada uno de mis proyectos.
