@@ -4,7 +4,7 @@ import java.awt.*;
 public class Paneles extends JFrame {
     public  Paneles(){
         setTitle("Teclado");
-        setSize(500, 500);
+        setSize(400, 400);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
