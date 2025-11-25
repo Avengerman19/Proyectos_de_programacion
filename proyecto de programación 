@@ -1,0 +1,214 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.ArrayList;
+import java.util.Random;
+
+public class JuegoVibora extends JPanel implements ActionListener, KeyListener {
+    private static final int ANCHO = 600;
+    private static final int ALTO = 600;
+    private static final int TAMANO_CELDA = 20;
+    private static final int DELAY = 100;
+    
+    private ArrayList<Point> vibora;
+    private Point comida;
+    private String direccion;
+    private boolean jugando;
+    private Timer timer;
+    private Random random;
+    private int puntuacion;
+    
+    public JuegoVibora() {
+        setPreferredSize(new Dimension(ANCHO, ALTO));
+        setBackground(Color.BLACK);
+        setFocusable(true);
+        addKeyListener(this);
+        
+        vibora = new ArrayList<>();
+        random = new Random();
+        timer = new Timer(DELAY, this);
+        
+        iniciarJuego();
+    }
+    
+    private void iniciarJuego() {
+        vibora.clear();
+        vibora.add(new Point(ANCHO / 2, ALTO / 2));
+        direccion = "DERECHA";
+        jugando = true;
+        puntuacion = 0;
+        generarComida();
+        timer.start();
+    }
+    
+    private void generarComida() {
+        int x = random.nextInt(ANCHO / TAMANO_CELDA) * TAMANO_CELDA;
+        int y = random.nextInt(ALTO / TAMANO_CELDA) * TAMANO_CELDA;
+        comida = new Point(x, y);
+        
+        // Asegurar que la comida no aparezca sobre la víbora
+        for (Point segmento : vibora) {
+            if (segmento.equals(comida)) {
+                generarComida();
+                return;
+            }
+        }
+    }
+    
+    private void mover() {
+        Point cabeza = vibora.get(0);
+        Point nuevaCabeza = new Point(cabeza);
+        
+        switch (direccion) {
+            case "ARRIBA":
+                nuevaCabeza.y -= TAMANO_CELDA;
+                break;
+            case "ABAJO":
+                nuevaCabeza.y += TAMANO_CELDA;
+                break;
+            case "IZQUIERDA":
+                nuevaCabeza.x -= TAMANO_CELDA;
+                break;
+            case "DERECHA":
+                nuevaCabeza.x += TAMANO_CELDA;
+                break;
+        }
+        
+        // Verificar colisiones con paredes
+        if (nuevaCabeza.x < 0 || nuevaCabeza.x >= ANCHO || 
+            nuevaCabeza.y < 0 || nuevaCabeza.y >= ALTO) {
+            gameOver();
+            return;
+        }
+        
+        // Verificar colisiones con el propio cuerpo
+        for (Point segmento : vibora) {
+            if (nuevaCabeza.equals(segmento)) {
+                gameOver();
+                return;
+            }
+        }
+        
+        vibora.add(0, nuevaCabeza);
+        
+        // Verificar si comió
+        if (nuevaCabeza.equals(comida)) {
+            puntuacion += 10;
+            generarComida();
+        } else {
+            vibora.remove(vibora.size() - 1);
+        }
+    }
+    
+    private void gameOver() {
+        jugando = false;
+        timer.stop();
+    }
+    
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        
+        if (jugando) {
+            // Dibujar comida
+            g.setColor(Color.RED);
+            g.fillOval(comida.x, comida.y, TAMANO_CELDA, TAMANO_CELDA);
+            
+            // Dibujar víbora
+            for (int i = 0; i < vibora.size(); i++) {
+                Point segmento = vibora.get(i);
+                if (i == 0) {
+                    g.setColor(Color.GREEN);
+                } else {
+                    g.setColor(new Color(0, 200, 0));
+                }
+                g.fillRect(segmento.x, segmento.y, TAMANO_CELDA, TAMANO_CELDA);
+                g.setColor(Color.BLACK);
+                g.drawRect(segmento.x, segmento.y, TAMANO_CELDA, TAMANO_CELDA);
+            }
+            
+            // Mostrar puntuación
+            g.setColor(Color.WHITE);
+            g.setFont(new Font("Arial", Font.BOLD, 20));
+            g.drawString("Puntuación: " + puntuacion, 10, 25);
+        } else {
+            // Pantalla de Game Over
+            g.setColor(Color.WHITE);
+            g.setFont(new Font("Arial", Font.BOLD, 40));
+            String mensaje = "Game Over";
+            FontMetrics fm = g.getFontMetrics();
+            g.drawString(mensaje, (ANCHO - fm.stringWidth(mensaje)) / 2, ALTO / 2 - 50);
+            
+            g.setFont(new Font("Arial", Font.PLAIN, 20));
+            String puntos = "Puntuación Final: " + puntuacion;
+            g.drawString(puntos, (ANCHO - g.getFontMetrics().stringWidth(puntos)) / 2, ALTO / 2);
+            
+            String reiniciar = "Presiona ESPACIO para reiniciar";
+            g.drawString(reiniciar, (ANCHO - g.getFontMetrics().stringWidth(reiniciar)) / 2, ALTO / 2 + 40);
+        }
+    }
+    
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        if (jugando) {
+            mover();
+            repaint();
+        }
+    }
+    
+    @Override
+    public void keyPressed(KeyEvent e) {
+        int tecla = e.getKeyCode();
+        
+        if (tecla == KeyEvent.VK_SPACE && !jugando) {
+            iniciarJuego();
+            repaint();
+            return;
+        }
+        
+        if (!jugando) return;
+        
+        switch (tecla) {
+            case KeyEvent.VK_UP:
+                if (!direccion.equals("ABAJO")) {
+                    direccion = "ARRIBA";
+                }
+                break;
+            case KeyEvent.VK_DOWN:
+                if (!direccion.equals("ARRIBA")) {
+                    direccion = "ABAJO";
+                }
+                break;
+            case KeyEvent.VK_LEFT:
+                if (!direccion.equals("DERECHA")) {
+                    direccion = "IZQUIERDA";
+                }
+                break;
+            case KeyEvent.VK_RIGHT:
+                if (!direccion.equals("IZQUIERDA")) {
+                    direccion = "DERECHA";
+                }
+                break;
+        }
+    }
+    
+    @Override
+    public void keyTyped(KeyEvent e) {}
+    
+    @Override
+    public void keyReleased(KeyEvent e) {}
+    
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
+            JFrame frame = new JFrame("Juego de la Víbora");
+            JuegoVibora juego = new JuegoVibora();
+            
+            frame.add(juego);
+            frame.pack();
+            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            frame.setLocationRelativeTo(null);
+            frame.setResizable(false);
+            frame.setVisible(true);
+        });
+    }
+}
